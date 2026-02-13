@@ -5,6 +5,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write   # 👈 IMPORTANT (fixes 403 error)
+
 jobs:
   build:
     runs-on: ubuntu-latest
