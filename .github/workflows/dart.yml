@@ -17,7 +17,7 @@ jobs:
 
       - uses: actions/setup-java@v3
         with:
-          distribution: 'temurin'
+          distribution: temurin
           java-version: '17'
 
       - uses: subosito/flutter-action@v2
@@ -26,29 +26,27 @@ jobs:
 
       - run: flutter pub get
 
-      # 🔐 Decode Keystore (from GitHub Secret)
       - name: Decode Keystore
         run: |
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/keystore.jks
 
-      # 🔐 Create key.properties dynamically
       - name: Create key.properties
         run: |
-          echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" > android/key.properties
-          echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/key.properties
-          echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/key.properties
-          echo "storeFile=app/keystore.jks" >> android/key.properties
+          echo storePassword=${{ secrets.KEYSTORE_PASSWORD }} > android/key.properties
+          echo keyPassword=${{ secrets.KEY_PASSWORD }} >> android/key.properties
+          echo keyAlias=${{ secrets.KEY_ALIAS }} >> android/key.properties
+          echo storeFile=app/keystore.jks >> android/key.properties
 
-      # 🔥 Build AAB for Play Store
-      - run: flutter build appbundle --release
+      - name: Build AAB
+        run: flutter build appbundle --release
 
-      # 🟡 If you need APK in future, just uncomment below
       # - run: flutter build apk --release --split-per-abi
 
-      - uses: ncipollo/release-action@v1
+      - name: Create Release
+        uses: ncipollo/release-action@v1
         with:
           artifacts: build/app/outputs/bundle/release/app-release.aab
           tag: v1.0.${{ github.run_number }}
+          name: Release v1.0.${{ github.run_number }}
+          body: Automated release of version v1.0.${{ github.run_number }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          name: "Release v1.0.${{ github.run_number }}"
-          body: "Automated release of version v1.0.${{ github.run_number }}
