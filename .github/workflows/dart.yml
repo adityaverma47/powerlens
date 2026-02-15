@@ -26,7 +26,8 @@ jobs:
         with:
           channel: stable
 
-      - run: flutter pub get
+      - name: Install Dependencies
+        run: flutter pub get
 
       # 🔐 Decode Android Keystore
       - name: Decode Keystore
@@ -40,17 +41,19 @@ jobs:
           echo keyAlias=${{ secrets.KEY_ALIAS }} >> android/key.properties
           echo storeFile=keystore.jks >> android/key.properties
 
-      # 🔨 Build AAB
+      # 🔨 Build AAB (AUTO VERSIONING ENABLED 🔥)
       - name: Build AAB
-        run: flutter build appbundle --release
+        run: |
+          flutter build appbundle \
+            --release \
+            --build-name=1.0.${{ github.run_number }} \
+            --build-number=${{ github.run_number }}
 
       # 🔐 Decode Play Store JSON Key
       - name: Decode Play Store Key
         run: |
           mkdir -p android/fastlane
           echo "${{ secrets.PLAYSTORE_JSON_KEY_BASE64 }}" | base64 --decode > android/fastlane/playstore_key.json
-          echo "Listing fastlane folder:"
-          ls -la android/fastlane
 
       # ✅ Setup Ruby
       - name: Setup Ruby
@@ -62,13 +65,13 @@ jobs:
       - name: Install Fastlane
         run: gem install fastlane --no-document
 
-      # 🚀 Deploy
+      # 🚀 Deploy to Play Store
       - name: Deploy to Play Store
         run: |
           cd android
           fastlane deploy
 
-      # Optional GitHub Release
+      # 📦 Optional GitHub Release
       - name: Create GitHub Release
         uses: ncipollo/release-action@v1
         with:
