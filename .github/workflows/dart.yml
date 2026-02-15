@@ -1,4 +1,4 @@
-name: Flutter Release Build
+name: Flutter Release Build & Deploy
 
 on:
   push:
@@ -26,6 +26,7 @@ jobs:
 
       - run: flutter pub get
 
+      # 🔐 Decode Android Keystore
       - name: Decode Keystore
         run: |
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/keystore.jks
@@ -37,12 +38,31 @@ jobs:
           echo keyAlias=${{ secrets.KEY_ALIAS }} >> android/key.properties
           echo storeFile=keystore.jks >> android/key.properties
 
+      # 🔨 Build AAB (Default for Play Store)
       - name: Build AAB
         run: flutter build appbundle --release
 
-      # - run: flutter build apk --release --split-per-abi
+      # 🔨 Build APK (Uncomment when needed)
+      # - name: Build APK
+      #   run: flutter build apk --release --split-per-abi
 
-      - name: Create Release
+      # 🔐 Decode Play Store JSON Key
+      - name: Decode Play Store Key
+        run: |
+          echo "${{ secrets.PLAYSTORE_JSON_KEY_BASE64 }}" | base64 --decode > android/fastlane/playstore_key.json
+
+      # 🚀 Install Fastlane
+      - name: Install Fastlane
+        run: gem install fastlane
+
+      # 🚀 Deploy to Play Store Internal Track (AAB Upload)
+      - name: Deploy to Play Store
+        run: |
+          cd android
+          fastlane deploy
+
+      # Optional GitHub Release (AAB)
+      - name: Create GitHub Release
         uses: ncipollo/release-action@v1
         with:
           artifacts: build/app/outputs/bundle/release/app-release.aab
