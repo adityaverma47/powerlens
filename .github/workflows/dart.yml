@@ -31,7 +31,7 @@ jobs:
       # 🔐 Decode Android Keystore
       - name: Decode Keystore
         run: |
-          printf "%s" "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/keystore.jks
+          printf "%s" "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/keystore.jks
 
       - name: Create key.properties
         run: |
@@ -44,22 +44,25 @@ jobs:
       - name: Build AAB
         run: flutter build appbundle --release
 
-      # 🔐 Decode Play Store JSON Key (Fixed method)
+      # 🔐 Decode Play Store JSON Key
       - name: Decode Play Store Key
         run: |
-          printf "%s" "${{ secrets.PLAYSTORE_JSON_KEY_BASE64 }}" | base64 -d > android/fastlane/playstore_key.json
+          mkdir -p android/fastlane
+          echo "${{ secrets.PLAYSTORE_JSON_KEY_BASE64 }}" | base64 --decode > android/fastlane/playstore_key.json
+          echo "Listing fastlane folder:"
+          ls -la android/fastlane
 
-      # ✅ Setup Ruby (Fix permission issue)
+      # ✅ Setup Ruby
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.2'
 
-      # ✅ Install Fastlane safely
+      # ✅ Install Fastlane
       - name: Install Fastlane
         run: gem install fastlane --no-document
 
-      # 🚀 Deploy to Play Store
+      # 🚀 Deploy
       - name: Deploy to Play Store
         run: |
           cd android
@@ -72,5 +75,5 @@ jobs:
           artifacts: build/app/outputs/bundle/release/app-release.aab
           tag: v1.0.${{ github.run_number }}
           name: Release v1.0.${{ github.run_number }}
-          body: Automated release of version v1.0.${{ github.run_number }}
+          body: Automated release v1.0.${{ github.run_number }}
           token: ${{ secrets.GITHUB_TOKEN }}
