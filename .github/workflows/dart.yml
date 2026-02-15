@@ -15,11 +15,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # ✅ Java Setup
       - uses: actions/setup-java@v3
         with:
           distribution: temurin
           java-version: '17'
 
+      # ✅ Flutter Setup
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -29,7 +31,7 @@ jobs:
       # 🔐 Decode Android Keystore
       - name: Decode Keystore
         run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/keystore.jks
+          printf "%s" "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/keystore.jks
 
       - name: Create key.properties
         run: |
@@ -38,30 +40,32 @@ jobs:
           echo keyAlias=${{ secrets.KEY_ALIAS }} >> android/key.properties
           echo storeFile=keystore.jks >> android/key.properties
 
-      # 🔨 Build AAB (Default for Play Store)
+      # 🔨 Build AAB
       - name: Build AAB
         run: flutter build appbundle --release
 
-      # 🔨 Build APK (Uncomment when needed)
-      # - name: Build APK
-      #   run: flutter build apk --release --split-per-abi
-
-      # 🔐 Decode Play Store JSON Key
+      # 🔐 Decode Play Store JSON Key (Fixed method)
       - name: Decode Play Store Key
         run: |
-          echo "${{ secrets.PLAYSTORE_JSON_KEY_BASE64 }}" | base64 --decode > android/fastlane/playstore_key.json
+          printf "%s" "${{ secrets.PLAYSTORE_JSON_KEY_BASE64 }}" | base64 -d > android/fastlane/playstore_key.json
 
-      # 🚀 Install Fastlane
+      # ✅ Setup Ruby (Fix permission issue)
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+
+      # ✅ Install Fastlane safely
       - name: Install Fastlane
-        run: gem install fastlane
+        run: gem install fastlane --no-document
 
-      # 🚀 Deploy to Play Store Internal Track (AAB Upload)
+      # 🚀 Deploy to Play Store
       - name: Deploy to Play Store
         run: |
           cd android
           fastlane deploy
 
-      # Optional GitHub Release (AAB)
+      # Optional GitHub Release
       - name: Create GitHub Release
         uses: ncipollo/release-action@v1
         with:
